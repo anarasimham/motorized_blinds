@@ -11,7 +11,11 @@ usb_path = glob.glob("/dev/ttyUSB*")
 ser = serial.Serial(usb_path[0],timeout=1,baudrate=115200)
 while True:
 
-    data = ser.readline().decode("utf-8")
+    try:
+        data = ser.readline().decode("utf-8")
+    except (OSError, serial.serialutil.SerialException):
+        print("No data")
+
     if(len(data)>0):
         print("received data from moteino: "+data, end="")
     try:
