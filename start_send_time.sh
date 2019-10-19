@@ -1,7 +1,7 @@
 #!/bin/bash
 i=0
 
-while i<1000
+while [ $i -lt 1000 ]
 do
     echo "Trying to start program"
     python3 ~/automated_blinds/send_time.py
