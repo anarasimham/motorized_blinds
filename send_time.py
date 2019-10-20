@@ -8,12 +8,16 @@ import os
 
 usb_path = glob.glob("/dev/ttyUSB*")
 
+print("Starting serial connection to Moteino")
 ser = serial.Serial(usb_path[0],timeout=1,baudrate=115200)
+no_data_time = 0
 while True:
-
     try:
         data = ser.readline().decode("utf-8")
     except (OSError, serial.serialutil.SerialException):
+        if time.time() - no_data_time < 10:
+            raise Exception("Too much no data")
+        no_data_time = time.time()
         print("No data")
 
     if(len(data)>0):
