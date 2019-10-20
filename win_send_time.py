@@ -15,17 +15,17 @@ state = "BC"
 while True:
     mydir = "C:\\Users\\Ashish\\Documents\\Arduino\\do_send"
     files = os.listdir(mydir)
-    if time.time() - timer > 12:
+    """if time.time() - timer > 12:
         if state is "BC":
             ser.write(state.encode("utf-8"))
             state = "BO"
         else:
             ser.write(state.encode("utf-8"))
             state = "BC"
-        timer = time.time()
+        timer = time.time()"""
     if len(files) > 0:
-        prefix = files[0][:2]
-        if (prefix == 'BO' or prefix == 'BC'):
+        prefix = files[0][:4]
+        if (prefix.startswith('B') or prefix.startswith('BC') or prefix.startswith('BO')):
             print("Sending '"+prefix+"'")
             ser.write(prefix.encode("utf-8"))
             os.rename(mydir+"\\"+files[0], mydir+"\\"+"old_"+files[0])
