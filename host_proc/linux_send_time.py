@@ -1,5 +1,6 @@
 import send_time_core
 import serial
+import glob
 
 usb_path = glob.glob("/dev/ttyUSB*")
 
