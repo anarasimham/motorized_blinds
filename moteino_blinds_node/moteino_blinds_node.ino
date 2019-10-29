@@ -24,7 +24,6 @@
 // Please maintain this license information along with authorship
 // and copyright notices in any redistribution of this code
 // **********************************************************************************
-#include <RFM69.h>         //get it here: https://www.github.com/lowpowerlab/rfm69
 #include <RFM69_ATC.h>     //get it here: https://www.github.com/lowpowerlab/rfm69
 #include <RFM69_OTA.h>
 #include <SPIFlash.h>      //get it here: https://www.github.com/lowpowerlab/spiflash
@@ -67,25 +66,46 @@
 //*********************************************************************************************
 #define SERIAL_BAUD   115200
 #define MOTORCONTROLPIN 10
+#define LISTEN_PERIOD 10
+//**** SETTINGS *********************************************************************************************
+#define WITH_RFM69              //comment this line out if you don't have a RFM69 on your Moteino
+#define WITH_SPIFLASH           //comment this line out if you don't have the FLASH-MEM chip on your Moteino
+//***********************************************************************************************************
+
+#if defined(WITH_RFM69) || defined(WITH_SPIFLASH)
+  #include <SPI.h>                //comes with Arduino IDE (www.arduino.cc)
+  #if defined(WITH_RFM69)
+    #include <RFM69.h>            //get it here: https://www.github.com/lowpowerlab/rfm69
+    #ifdef ENABLE_ATC
+      RFM69_ATC radio;
+    #else
+      RFM69 radio;
+    #endif
+  #endif
+  #if defined(WITH_SPIFLASH)
+    #include <SPIFlash.h>         //get it here: https://www.github.com/lowpowerlab/spiflash
+    SPIFlash flash(SS_FLASHMEM, 0xEF30); //EF30 for 4mbit  Windbond chip (W25X40CL)
+  #endif
+#endif
+
 
 #if defined (MOTEINO_M0) && defined(SERIAL_PORT_USBVIRTUAL)
   #define Serial SERIAL_PORT_USBVIRTUAL // Required for Serial on Zero based boards
 #endif
 
-int timer10s;
 Servo myServo;
-SPIFlash flash(SS_FLASHMEM, 0xEF30); //EF30 for 4mbit  Windbond chip (W25X40CL)
-
-#ifdef ENABLE_ATC
-  RFM69_ATC radio;
-#else
-  RFM69 radio;
-#endif
-
+int servoDegs;
 
 void setup() {
-  Serial.begin(SERIAL_BAUD);
+#ifdef WITH_RFM69
   radio.initialize(FREQUENCY,NODEID,NETWORKID);
+  radio.sleep();
+#endif
+
+#ifdef WITH_SPIFLASH
+  if (flash.initialize())
+    flash.sleep();
+#endif
 
 #ifdef ENCRYPTKEY
   radio.encrypt(ENCRYPTKEY);
@@ -103,25 +123,47 @@ void setup() {
   radio.enableAutoPower(ATC_RSSI);
 #endif
 
-  if (flash.initialize())
-  {
-    Serial.print("SPI Flash Init OK ... UniqueID (MAC): ");
-    flash.readUniqueId();
-    for (byte i=0;i<8;i++)
-    {
-      Serial.print(flash.UNIQUEID[i], HEX);
-      Serial.print(' ');
-    }
-    Serial.println();
-  }
-  else
-    Serial.println("SPI Flash MEM not found (is chip soldered?)...");
-
 #ifdef ENABLE_ATC
   Serial.println("RFM69_ATC Enabled (Auto Transmission Control)");
 #endif
 
-  timer10s = 0;
+  servoDegs = -1;
+
+  for (uint8_t i=0; i<=A5; i++)
+  {
+#ifdef WITH_RFM69
+    if (i == RF69_SPI_CS) continue;
+#endif
+#ifdef WITH_SPIFLASH
+    if (i == SS_FLASHMEM) continue;
+#endif
+    pinMode(i, OUTPUT);
+    digitalWrite(i, LOW);
+  }
+
+  pinMode(0, OUTPUT);
+  digitalWrite(0,HIGH);
+  pinMode(1, OUTPUT);
+  digitalWrite(1,HIGH);
+
+  pinMode(LED_BUILTIN, OUTPUT);
+
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(20);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(20);
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(20);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(20);
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(20);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(20);
+
+  Serial.begin(SERIAL_BAUD);
+  Serial.println("Done setting up");
+  Serial.flush();
 }
 
 /// Use watchdog to reset
@@ -141,8 +183,31 @@ void Blink(byte PIN, int DELAY_MS)
   digitalWrite(PIN,LOW);
 }
 
+void sweep(int toDeg) {
+  myServo.attach(MOTORCONTROLPIN);
+  
+  if (servoDegs == -1) {
+    myServo.write(toDeg);
+    servoDegs = toDeg;
+  } else {
+    while (servoDegs != toDeg) {
+      if (servoDegs < toDeg) {
+        servoDegs += 1;
+      } else {
+        servoDegs -= 1;
+      }
+
+      myServo.write(servoDegs);
+      delay(15);
+    }
+  }
+}
+
 void loop() {
   //check for any received packets
+  radio.receiveDone();
+  delay(LISTEN_PERIOD);
+  
   if (radio.receiveDone())
   {
     
@@ -175,13 +240,13 @@ void loop() {
       && radio.DATA[0] == 'B' 
         && ( radio.DATA[1] == 'O' 
         ||   radio.DATA[1] == 'C') ) {
-      myServo.attach(MOTORCONTROLPIN);
+      
       if (radio.DATA[1] == 'O') {
         Serial.println("Got BO");
-        myServo.write(90);
+        sweep(90);
       } else {
         Serial.println("Got BC");
-        myServo.write(180);
+        sweep(180);
       }
     }
 
@@ -193,15 +258,13 @@ void loop() {
       }
       
       int degs = degStr.toInt();
-      myServo.attach(MOTORCONTROLPIN);
-      myServo.write(degs);
+      sweep(degs);
     }
     delay(2000);
   }
-  
-  if (millis() > timer10s+10000) {
-    //Serial.println("Powering down 8s");
-    Serial.flush();
-    LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
-  }
+
+  Serial.println("Powering down 8s");
+  Serial.flush();
+  radio.sleep();
+  LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
 }

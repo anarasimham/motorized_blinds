@@ -58,8 +58,9 @@
 //*****************************************************************************************************************************
 
 #define TIMEOUT     3000
-#define ACK_TIME       80  // # of ms to wait for an ack packet
-#define RETRIES       200
+#define ACK_TIME       15  // # of ms to wait for an ack packet
+#define RETRIES       250
+#define RETRY_LOOPS 100
 
 #define DEBUG_MODE false         //set 'true' to see verbose output from programming sequence
 
@@ -260,7 +261,13 @@ void closeBlinds() {
 void sendBlindsMessage(char* payload) {
   char buf[50];
   for (byte i = 0; i < sizeof(nodeList) / sizeof(int); i++) {
-    if (!radio.sendWithRetry(nodeList[i], payload, strlen(payload), RETRIES, ACK_TIME)) {
+    byte j = 0;
+    boolean sendFailed = true;
+    while (j < RETRY_LOOPS && sendFailed) {
+      Blink(LED, 3);
+      sendFailed = !radio.sendWithRetry(nodeList[i], payload, strlen(payload), RETRIES, ACK_TIME);
+    }
+    if (sendFailed) {
 
       sprintf(buf, "Failed sending payload %s to node %d, no ACK", payload, nodeList[i]);
       Serial.println(buf);
