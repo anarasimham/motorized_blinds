@@ -66,7 +66,7 @@
 //*********************************************************************************************
 #define SERIAL_BAUD   115200
 #define MOTORCONTROLPIN 10
-#define LISTEN_PERIOD 10
+#define LISTEN_PERIOD 7
 //**** SETTINGS *********************************************************************************************
 #define WITH_RFM69              //comment this line out if you don't have a RFM69 on your Moteino
 #define WITH_SPIFLASH           //comment this line out if you don't have the FLASH-MEM chip on your Moteino

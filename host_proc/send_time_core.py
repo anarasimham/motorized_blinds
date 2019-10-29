@@ -8,6 +8,7 @@ import os
 
 
 def send_time(ser, no_data_time):
+    now = datetime.datetime.now(pytz.timezone('US/Eastern'))
     try:
         data = ser.readline().decode("utf-8")
     except (OSError, serial.serialutil.SerialException):
@@ -17,10 +18,10 @@ def send_time(ser, no_data_time):
         print("No data")
 
     if(len(data)>0):
-        print("received data from moteino: "+data, end="")
+        print(str(now)+": "+data, end="")
     try:
         if data.index("SYN-REQ") >= 0:
-            now = datetime.datetime.now(pytz.timezone('US/Eastern'))
+            
             offset_hrs = int(now.utcoffset().total_seconds()/60/60)
             time_send = "TI"+str(int(now.timestamp())) \
                         +("+" if offset_hrs > 0 else "-") +str(abs(offset_hrs))
