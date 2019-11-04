@@ -2,3 +2,4 @@
 do_send
 gittoken 
 __pycache__/
+logs/

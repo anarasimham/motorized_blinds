@@ -2,6 +2,11 @@ import send_time_core
 import glob
 import serial
 import os
+import logging
+
+send_time_core.init_logger()
+
+logger = logging.getLogger("send_time")
 
 usb_path = glob.glob("/dev/ttyUSB*")
 ser = serial.Serial("COM5",timeout=1,baudrate=115200)
@@ -14,7 +19,7 @@ while True:
     if len(files) > 0:
         prefix = files[0][:4]
         if (prefix.startswith('B') or prefix.startswith('BC') or prefix.startswith('BO')):
-            print("Sending '"+prefix+"'")
+            logger.info("Sending '"+prefix+"'")
             if prefix.startswith('BO') or prefix.startswith('BC'):
                 ser.write(prefix[:2].encode("utf-8"))
             else:

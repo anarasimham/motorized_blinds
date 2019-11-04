@@ -1,8 +1,9 @@
 import send_time_core
 import serial
 import glob
+import logging
 
-print("Starting serial connection to Moteino")
+send_time_core.init_logger()
 
 usb_path = glob.glob("/dev/ttyUSB*")
 ser = serial.Serial(usb_path[0],timeout=1,baudrate=115200)
