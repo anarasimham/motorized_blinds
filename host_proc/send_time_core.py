@@ -21,7 +21,6 @@ def send_time(ser, no_data_time):
         print(str(now)+": "+data, end="")
     try:
         if data.index("SYN-REQ") >= 0:
-            
             offset_hrs = int(now.utcoffset().total_seconds()/60/60)
             time_send = "TI"+str(int(now.timestamp())) \
                         +("+" if offset_hrs > 0 else "-") +str(abs(offset_hrs))
