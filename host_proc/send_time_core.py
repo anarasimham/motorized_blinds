@@ -13,8 +13,7 @@ logger = logging.getLogger("send_time")
 log_file = "logs/send_time.out"
 
 def init_logger():
-    formatter = logging.Formatter('%(asctime)s %(levelname)8s %(message)s',
-                datefmt='%Y-%m-%d %H:%M:%S')
+    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 
     logger.setLevel(logging.INFO)
     handler = TimedRotatingFileHandler(log_file,
@@ -27,7 +26,6 @@ def init_logger():
     logger.addHandler(handler)
     logger.addHandler(screen_handler)
 
-    logger.info("Starting serial connection to Moteino")
 
 
 def send_time(ser, no_data_time):
