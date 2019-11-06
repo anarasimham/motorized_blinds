@@ -7,7 +7,7 @@ import pytz
 import os
 import sys
 import logging
-from logging.handlers import TimedRotatingFileHandler
+from logging.handlers import RotatingFileHandler
 
 logger = logging.getLogger("send_time")
 log_file = "logs/send_time.out"
@@ -16,9 +16,8 @@ def init_logger():
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 
     logger.setLevel(logging.INFO)
-    handler = TimedRotatingFileHandler(log_file,
-                                        when="d",
-                                        interval=1,
+    handler = RotatingFileHandler(log_file,
+                                        maxBytes=100000,
                                         backupCount=30)
     handler.setFormatter(formatter)
     screen_handler = logging.StreamHandler(stream=sys.stdout)
